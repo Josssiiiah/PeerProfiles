@@ -76,9 +76,9 @@ export default function LoginRoute() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-4">Create an account</h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center">
+      <div className="bg-white p-6 mt-48 rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold mb-4">Sign up</h1>
         <Form method="post" className="space-y-4">
           <div>
             <label

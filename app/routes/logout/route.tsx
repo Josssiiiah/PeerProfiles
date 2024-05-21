@@ -1,6 +1,4 @@
-import type {
-  LoaderFunctionArgs,
-} from "@remix-run/cloudflare";
+import type { LoaderFunctionArgs } from "@remix-run/cloudflare";
 import { redirect } from "@remix-run/cloudflare";
 import { initializeLucia } from "auth";
 import { parseCookies } from "oslo/cookie";

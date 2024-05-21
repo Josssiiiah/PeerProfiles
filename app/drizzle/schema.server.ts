@@ -6,6 +6,16 @@ export const resources = sqliteTable("resources", {
   href: text("href").notNull(),
 });
 
+export const students = sqliteTable("students", {
+  id: integer("id").primaryKey(),
+  name: text("name"),
+  category: text("category"),
+  description: text("description"),
+  image_url: text("image_url"),
+});
+
+
+// Auth
 export const Users = sqliteTable("Users", {
   id: text("id").primaryKey(),
   username: text("username").notNull(),
