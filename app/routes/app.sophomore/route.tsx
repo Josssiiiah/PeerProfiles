@@ -99,7 +99,7 @@ export default function Frosh() {
           <h2 className="hidden sm:flex">Back</h2>
         </Button>
         <h1 className="text-4xl font-bold absolute left-1/2 transform -translate-x-1/2">
-          Frosh
+          Sophomore
         </h1>
       </div>
       <div className="grid sm:grid-cols-2 gap-6 pt-8 sm:pt-16">

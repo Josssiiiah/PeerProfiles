@@ -14,7 +14,6 @@ export const students = sqliteTable("students", {
   image_url: text("image_url"),
 });
 
-
 // Auth
 export const Users = sqliteTable("Users", {
   id: text("id").primaryKey(),

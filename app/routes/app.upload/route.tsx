@@ -3,21 +3,20 @@ import {
   json,
   LoaderFunctionArgs,
 } from "@remix-run/cloudflare";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useActionData } from "@remix-run/react";
 import { drizzle } from "drizzle-orm/d1";
 import { students } from "app/drizzle/schema.server";
-
 import {
   S3Client,
   ListObjectsV2Command,
   GetObjectCommand,
-  PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
-
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { doTheDbThing } from "lib/dbThing";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useToast } from "~/components/ui/use-toast";
+import { Button } from "~/components/ui/button";
 
 const S3 = new S3Client({
   region: "auto",
@@ -79,11 +78,14 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export default function Add() {
   const { resourceList, imageList } = useLoaderData<typeof loader>();
-  const [fileName, setFileName] = useState<string>('');
+  const actionData = useActionData<typeof action>();
+  const { toast } = useToast();
+
+  const [fileName, setFileName] = useState<string>("");
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    description: '',
+    name: "",
+    category: "",
+    description: "",
   });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +99,23 @@ export default function Add() {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  // Show toast notifications based on action data
+  useEffect(() => {
+    if (actionData) {
+      if (actionData.status === 201) {
+        toast({
+          title: "Success",
+          description: actionData.message,
+        });
+      } else if (actionData.status === 500) {
+        toast({
+          title: "Error",
+          description: actionData.message,
+        });
+      }
+    }
+  }, [actionData, toast]);
 
   return (
     <div className="min-h-screen bg-gray-100 max-w-[1440px] px-12 flex flex-col items-center text-gray-800">
@@ -156,12 +175,12 @@ export default function Add() {
             </label>
           </div>
           <input type="hidden" name="fileName" value={fileName} />
-          <button
+          <Button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded"
           >
             Add
-          </button>
+          </Button>
         </Form>
       </div>
       <div className="pt-24 w-full max-w-4xl px-4">
@@ -171,11 +190,12 @@ export default function Add() {
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {imageList.map((url, index) => (
             <li key={index} className="w-full h-auto">
-              <img
+              <iframe
+                width={"100px"}
                 src={url}
-                alt={`Artwork ${index}`}
-                className="w-full h-auto rounded-lg"
-              />
+                title={`PDF ${index}`}
+                className="w-full h-64"
+              ></iframe>
             </li>
           ))}
         </ul>
@@ -197,7 +217,6 @@ export default function Add() {
 export async function action({ request, context }: ActionFunctionArgs) {
   const db = drizzle(context.cloudflare.env.DB);
   const formData = await request.formData();
-  console.log("hello", formData.get("name"))
 
   // Handle resource addition
   const name = formData.get("name");
@@ -210,6 +229,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
     try {
       const fileStream = file.stream();
       const fileType = file.type;
+      const fileSize = file.size;
+
+      // Validate file size and type
+      const maxFileSizeInBytes = 10 * 1024 * 1024; // 10MB
+      if (fileSize > maxFileSizeInBytes) {
+        throw new Error("File size exceeds the allowed limit");
+      }
+
+      if (!["image/jpeg", "image/png", "application/pdf"].includes(fileType)) {
+        throw new Error("Unsupported file type");
+      }
 
       const upload = new Upload({
         client: S3,
@@ -219,34 +249,44 @@ export async function action({ request, context }: ActionFunctionArgs) {
           Body: fileStream,
           ContentType: fileType,
         },
-      });       
+        queueSize: 6,
+      });
 
+      upload.on("httpUploadProgress", (progress) => {
+        console.log(progress);
+      });
 
-      await upload.done();       
-      console.log("dasd")
-
-
-      const imageUrl = `https://bbe111b6726945b110b32ab037e4c232.r2.cloudflarestorage.com/who-profile-pictures/${fileName}`;
-
-      await db
-        .insert(students)
-        .values({
-          name: name as string,
-          category: category as string,
-          description: description as string,
-          image_url: imageUrl,
-        })
-        .execute();
-
-      return json(
-        { message: "Image uploaded to S3 successfully" },
-        { status: 201 }
-      );
+      console.log("Before");
+      await upload.done();
+      console.log("Upload complete");
     } catch (error) {
       console.error("Failed to upload to S3", error);
-      return json({ message: "Failed to upload image" }, { status: 500 });
+      return json(
+        { message: "Failed to upload image", status: 500 },
+        { status: 500 }
+      );
     }
+
+    const imageUrl = `https://bbe111b6726945b110b32ab037e4c232.r2.cloudflarestorage.com/who-profile-pictures/${fileName}`;
+
+    await db
+      .insert(students)
+      .values({
+        name: name as string,
+        category: category as string,
+        description: description as string,
+        image_url: imageUrl,
+      })
+      .execute();
+
+    return json(
+      { message: "Image uploaded to S3 successfully", status: 201 },
+      { status: 201 }
+    );
   }
 
-  return json({ message: "No operation performed" }, { status: 400 });
+  return json(
+    { message: "No operation performed", status: 400 },
+    { status: 400 }
+  );
 }

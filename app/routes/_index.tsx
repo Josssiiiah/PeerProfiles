@@ -58,12 +58,12 @@ export default function Index() {
         >
           Get Started
         </Link>
-        <Link
+        {/* <Link
           to="/app/upload"
           className="px-4 w-1/2 sm:w-1/3 py-4 mt-6 rounded bg-black text-white font-medium hover:bg-gray-600"
         >
           Admin Upload
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
