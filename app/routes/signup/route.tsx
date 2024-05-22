@@ -2,7 +2,6 @@ import { Form, Link, useActionData } from "@remix-run/react";
 import {
   ActionFunctionArgs,
   json,
-  MetaFunction,
   redirect,
 } from "@remix-run/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
@@ -11,9 +10,7 @@ import { generateId } from "lucia";
 import { initializeLucia } from "auth";
 import { Users } from "~/drizzle/schema.server";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Sign up" }];
-};
+
 
 export async function action({ context, request }: ActionFunctionArgs) {
   const db = drizzle(context.cloudflare.env.DB);
@@ -65,7 +62,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
   const session = await lucia.createSession(userId, {});
   const sessionCookie = lucia.createSessionCookie(session.id);
 
-  return redirect("/", {
+  return redirect("/app/select", {
     headers: {
       "Set-Cookie": sessionCookie.serialize(),
     },
