@@ -76,7 +76,7 @@ export default function LoginRoute() {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center">
       <div className="bg-white p-6 mt-48 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold mb-4">Sign up</h1>
-        <Form method="post" className="space-y-4">
+        <Form method="POST" className="space-y-4">
           <div>
             <label
               htmlFor="username"
